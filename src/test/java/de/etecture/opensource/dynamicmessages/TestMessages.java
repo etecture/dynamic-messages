@@ -39,10 +39,12 @@
  */
 package de.etecture.opensource.dynamicmessages;
 
+import de.etecture.opensource.dynamicmessages.api.Faces;
 import de.etecture.opensource.dynamicmessages.api.MessageBundle;
 import de.etecture.opensource.dynamicmessages.api.MessageFallback;
 import de.etecture.opensource.dynamicmessages.api.MessageFallbacks;
 import de.etecture.opensource.dynamicmessages.api.MessageKey;
+import javax.faces.application.FacesMessage;
 
 @MessageBundle
 public interface TestMessages {
@@ -56,5 +58,14 @@ public interface TestMessages {
 	String defaultMessage();
 
 	@MessageKey("greeting2")
-	String anotherGreeting();
+    String anotherGreeting();
+
+    FacesMessage faces();
+
+    @Faces(severity = Faces.Severity.ERROR, summaryKey = "faces.summary")
+    FacesMessage other();
+
+    TestException exception();
+
+    TestException exception(Throwable cause);
 }

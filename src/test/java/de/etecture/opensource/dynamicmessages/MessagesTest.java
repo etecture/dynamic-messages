@@ -41,6 +41,7 @@ package de.etecture.opensource.dynamicmessages;
 
 import java.util.Arrays;
 import java.util.Locale;
+import javax.faces.application.FacesMessage;
 import org.jboss.weld.environment.se.Weld;
 import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.AfterClass;
@@ -59,53 +60,84 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class MessagesTest {
 
-	private final static Weld weld = new Weld();
+    private final static Weld weld = new Weld();
+    private static WeldContainer container;
+    private TestBean bean;
+    private LocaleProvider localeProvider;
 
-	private static WeldContainer container;
+    @Parameters
+    public static Iterable<Object[]> parameters() {
+        return Arrays.asList(new Object[]{new ExpectedResource(Locale.FRENCH)},
+                new Object[]{new ExpectedResource(Locale.GERMANY)},
+                new Object[]{new ExpectedResource(Locale.ENGLISH)});
+    }
+    private ExpectedResource expected;
 
-	private TestBean bean;
-	private LocaleProvider localeProvider;
+    public MessagesTest(ExpectedResource expected) {
+        this.expected = expected;
+    }
 
-	@Parameters
-	public static Iterable<Object[]> parameters() {
-		return Arrays.asList(new Object[]{new ExpectedResource(Locale.FRENCH)}, new Object[]{new ExpectedResource(Locale.GERMANY)}, new Object[]{new ExpectedResource(Locale.ENGLISH)});
-	}
-	private ExpectedResource expected;
+    @BeforeClass
+    public static void bootstrap() {
+        container = weld.initialize();
+    }
 
-	public MessagesTest(ExpectedResource expected) {
-		this.expected = expected;
-	}
+    @Before
+    public void init() {
+        this.localeProvider = container.instance().select(LocaleProvider.class)
+                .get();
+        this.localeProvider.setCurrentLocale(expected.getLocale());
+        this.bean = container.instance().select(TestBean.class).get();
+    }
 
-	@BeforeClass
-	public static void bootstrap() {
-		container = weld.initialize();
-	}
+    @Test
+    public void testBeanInjection() {
+        assertNotNull(this.localeProvider);
+        assertNotNull(this.bean);
+        assertNotNull(this.bean.messages);
+        assertEquals(this.localeProvider, this.bean.localeProvider);
+        assertEquals("wrong current locale", expected.getLocale(),
+                this.bean.localeProvider.getCurrentLocale());
+        assertEquals("wrong injected locale", expected.getLocale(),
+                this.bean.currentLocale);
+    }
 
-	@Before
-	public void init() {
-		this.localeProvider = container.instance().select(LocaleProvider.class).get();
-		this.localeProvider.setCurrentLocale(expected.getLocale());
-		this.bean = container.instance().select(TestBean.class).get();
-	}
+    @Test
+    public void testMessages() throws Exception {
+        String text = this.bean.print("Robert");
+        assertEquals(expected.getExpected(), text);
+    }
 
-	@Test
-	public void testBeanInjection() {
-		assertNotNull(this.localeProvider);
-		assertNotNull(this.bean);
-		assertNotNull(this.bean.messages);
-		assertEquals(this.localeProvider, this.bean.localeProvider);
-		assertEquals("wrong current locale", expected.getLocale(), this.bean.localeProvider.getCurrentLocale());
-		assertEquals("wrong injected locale", expected.getLocale(), this.bean.currentLocale);
-	}
+    @Test
+    public void testFacesMessages() throws Exception {
+        FacesMessage fm = bean.facesMessage();
+        assertNotNull(fm);
+        assertEquals(FacesMessage.SEVERITY_INFO, fm.getSeverity());
+        assertEquals("Summary", fm.getSummary());
+        assertEquals("Details", fm.getDetail());
 
-	@Test
-	public void testMessages() throws Exception {
-		String text = this.bean.print("Robert");
-		assertEquals(expected.getExpected(), text);
-	}
+        fm = bean.otherFacesMessage();
+        assertNotNull(fm);
+        assertEquals(FacesMessage.SEVERITY_ERROR, fm.getSeverity());
+        assertEquals("Summary", fm.getSummary());
+        assertEquals("Other Details", fm.getDetail());
+    }
 
-	@AfterClass
-	public static void shutdown() {
-		weld.shutdown();
-	}
+    @Test
+    public void testExceptions() throws Exception {
+        TestException te = bean.exception();
+        assertNotNull(te);
+        assertEquals("exception", te.getMessage());
+        assertNull(te.getCause());
+        Exception ex = new Exception();
+        te = bean.exception(ex);
+        assertNotNull(te);
+        assertEquals("exception", te.getMessage());
+        assertSame(ex, te.getCause());
+    }
+
+    @AfterClass
+    public static void shutdown() {
+        weld.shutdown();
+    }
 }

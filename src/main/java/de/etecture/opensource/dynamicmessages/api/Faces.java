@@ -37,52 +37,56 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-package de.etecture.opensource.dynamicmessages;
+package de.etecture.opensource.dynamicmessages.api;
 
-import java.io.IOException;
-import java.util.Locale;
-import javax.enterprise.context.Dependent;
-import javax.faces.application.FacesMessage;
-import javax.inject.Inject;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  *
  * @author rhk
  */
-@Dependent
-public class TestBean {
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Faces {
 
-    @Inject
-    TestMessages messages;
-    @Inject
-    LocaleProvider localeProvider;
-    @Inject
-    @Current
-    Locale currentLocale;
+    enum Severity {
 
-    public String print(String who) throws IOException {
-        StringBuilder out = new StringBuilder();
-        out.append(messages.greeting(who));
-        out.append(" ");
-        out.append(messages.defaultMessage());
-        out.append(" ");
-        out.append(messages.anotherGreeting());
-        return out.toString();
+        INFO(javax.faces.application.FacesMessage.SEVERITY_INFO),
+        WARN(javax.faces.application.FacesMessage.SEVERITY_WARN),
+        FATAL(javax.faces.application.FacesMessage.SEVERITY_FATAL),
+        ERROR(javax.faces.application.FacesMessage.SEVERITY_ERROR);
+        private final javax.faces.application.FacesMessage.Severity severity;
+
+        private Severity(javax.faces.application.FacesMessage.Severity severity) {
+            this.severity = severity;
+        }
+
+        public javax.faces.application.FacesMessage.Severity facesSeverity() {
+            return severity;
+        }
     }
 
-    public FacesMessage facesMessage() {
-        return messages.faces();
-    }
+    /**
+     * specifies the severity for the faces message
+     *
+     * @return
+     */
+    Severity severity();
 
-    public FacesMessage otherFacesMessage() {
-        return messages.other();
-    }
+    /**
+     * specifies the key to load the details message
+     *
+     * @return
+     */
+    String detailsKey() default "$$$";
 
-    public TestException exception() {
-        return messages.exception();
-    }
-
-    public TestException exception(Throwable cause) {
-        return messages.exception(cause);
-    }
+    /**
+     * specified the key to load the summary message
+     *
+     * @return
+     */
+    String summaryKey() default "$$$";
 }
