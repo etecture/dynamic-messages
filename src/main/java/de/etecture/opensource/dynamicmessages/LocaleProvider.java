@@ -47,8 +47,7 @@ import java.util.Locale;
  */
 public interface LocaleProvider {
 
-	Locale getCurrentLocale();
+    Locale getCurrentLocale();
 
-	void setCurrentLocale(Locale locale);
-
-	}
+    void setCurrentLocale(Locale locale);
+}

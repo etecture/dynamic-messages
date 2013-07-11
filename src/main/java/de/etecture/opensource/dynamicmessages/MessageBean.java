@@ -53,6 +53,7 @@ import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.util.AnnotationLiteral;
+import javax.inject.Named;
 
 /**
  *
@@ -124,8 +125,11 @@ public class MessageBean implements Bean<Object> {
 	}
 
 	@Override
-	public String getName() {
-		return messagesInterface.getName();
+    public String getName() {
+        if (messagesInterface.isAnnotationPresent(Named.class)) {
+            return messagesInterface.getAnnotation(Named.class).value();
+        }
+        return messagesInterface.getName();
 	}
 
 	@Override
