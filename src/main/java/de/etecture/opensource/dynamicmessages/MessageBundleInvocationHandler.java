@@ -121,28 +121,36 @@ public class MessageBundleInvocationHandler implements InvocationHandler {
     }
 
     private String processStringMessage(Method method, Object[] args) {
-        String messageKey;
+        boolean format = true;
+        String messageKey = "";
         if (method.isAnnotationPresent(MessageKey.class)) {
             messageKey = method.getAnnotation(MessageKey.class).value();
-        } else {
+            format = method.getAnnotation(MessageKey.class).format();
+        }
+        if (messageKey.isEmpty()) {
             messageKey = method.getName();
         }
-        return getMessage(method, messageKey, args);
+        return getMessage(method, messageKey, format, args);
     }
 
     private FacesMessage getFacesMessage(Method method,
             FacesMessage.Severity severity,
             String detailsKey, String summaryKey, Object[] args) {
-        String summary = getMessage(method, summaryKey, args);
-        String details = getMessage(method, detailsKey, args);
+        String summary = getMessage(method, summaryKey, true, args);
+        String details = getMessage(method, detailsKey, true, args);
         if (details.isEmpty() || "???".equals(details)) {
             details = null;
         }
         return new FacesMessage(severity, summary, details);
     }
 
-    private String getMessage(Method method, String messageKey, Object[] args) {
-        return MessageFormat.format(getMessage(method, messageKey), args);
+    private String getMessage(Method method, String messageKey, boolean format,
+            Object[] args) {
+        if (format) {
+            return MessageFormat.format(getMessage(method, messageKey), args);
+        } else {
+            return getMessage(method, messageKey);
+        }
     }
 
     private String getMessage(Method method, String messageKey) {

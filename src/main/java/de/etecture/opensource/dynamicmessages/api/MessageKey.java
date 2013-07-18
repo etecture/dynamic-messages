@@ -52,6 +52,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface MessageKey {
 
-	String value();
+    String value() default "";
+
+    boolean format() default true;
 
 }
